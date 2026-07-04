@@ -1,0 +1,164 @@
+    //PART 7: BOOKING CONFIRMATION
+
+    function confirmBooking(){      //Confirms the booking for the selected seats and adds it to the priority queue and the user's tickets
+        // Checkout form before confirming
+        const name = document.getElementById('userName').value.trim();      //Gets the user's name from the checkout form
+        const email = document.getElementById('userEmail').value.trim();     //Gets the user's email 
+        const phone = document.getElementById('userPhone').value.trim();     //Gets the user's phone 
+        const payment = document.getElementById('paymentMethod').value;      //Gets the selected payment method
+        
+        if(!selectedSeats.size){showToast('❌ Select at least one seat!',true);return}     //If no seats are selected, it shows a toast notification indicating that the user must select at least one seat
+        if(!name || !email || !phone){showToast('❌ Please fill in all your details',true);return}      //Validates that all user details are filled in
+        if(!email.includes('@')){showToast('❌ Please enter a valid email',true);return}      //Validates that the email contains an @ symbol
+        if(phone.length < 10){showToast('❌ Please enter a valid phone number',true);return}      //Validates that the phone number has at least 10 digits
+        
+        const vip=hasVipSelected();      //Detects VIP status automatically from the seats chosen, no manual checkbox involved
+        const newBooking={      //Creates a new booking with the necessary details for the booking
+            id:`BK-00${String(bookingCounter++).padStart(2,'0')}`,
+            name: name,      // Uses the user's name from the checkout form
+            event: currentEvent.title,
+            venue: currentEvent.venue,      //Stores the venue so it can be shown on the confirmation popup and the PDF
+            date: currentEvent.date,      //Stores the event's date so it can be shown on the confirmation popup and the PDF
+            isoDate: currentEvent.isoDate,      //Stores the event's real date so the PDF can format it
+            time: currentEvent.time,      //Stores the event's time so it can be shown on the confirmation popup and the PDF
+            price: currentEvent.price,      //Stores the price per seat at booking time so it's still available after the modal closes
+            seats: selectedSeats.size,
+            seatKeys: [...selectedSeats].sort(),      //Stores the actual seat codes chosen (e.g. A1, B4) for the "Seat(s)" line
+            priority: nextPriority(vip),      // Joins right behind the last person in the same tier (VIP or standard) instead of a fixed number
+            status: vip ? 'vip' : 'confirmed',      //VIPs show as 'vip' status, standard as 'confirmed'
+            vip: vip,
+            email: email,      //Stores user's email
+            phone: phone,      //Stores user's phone
+            payment: payment      //Stores payment method
+        };
+        bookingPQ.enqueue(newBooking);      //Enqueues the new booking into the priority queue to manage the booking requests based on priority
+        myTickets.push(newBooking);     //Adds the new booking to the user's tickets array to keep track of their booked tickets
+        
+        currentUserDetails = { name, email, phone };      //Stores user details for maybe later use or confirmation
+        
+        const ev=EVENTS.find(e=>e.id===currentEvent.id);
+        if(ev)ev.seats=Math.max(0,ev.seats-selectedSeats.size);     //Updates the available seats for the current event by subtracting the number of selected seats, ensuring that it does not go below zero
+        const takenSeats=eventSeatMap[currentEvent.id];
+        if(takenSeats)selectedSeats.forEach(key=>takenSeats.add(key));      //Marks the newly booked seats as taken so they stay unavailable next time the seat map is built
+        closeModal();
+        renderEvents([...EVENTS]);
+        renderQueue();
+        
+        //Shows confirmation with a download option
+        showConfirmation(newBooking);      //Displays a confirmation popup with download option
+        showToast(`✅ Booked ${newBooking.seats} seat(s)!`,false);      //Shows a toast notification indicating that the booking was successful and displays the number of seats booked
+    }
+
+    //Function that helps to turn an isoDate ("YYYY-MM-DD") into the "date/month/year" format used on the PDF ticket
+    function formatDDMMYYYY(isoDate){
+        if(!isoDate)return '—';
+        const [y,m,d]=isoDate.split('-');      //Splits the ISO date into its year, month and day parts
+        return `${d}/${m}/${y}`;      //Rebuilds it as day/month/year
+    }
+
+    //Function to show confirmation popup with download option
+    function showConfirmation(booking) {      //Displays a confirmation popup with booking details and download option
+        const total = booking.seats * booking.price + (booking.vip ? 2000 : 0);      //Calculates the total price for the booking using the price stored on the booking itself
+        const seatLabel = booking.seatKeys && booking.seatKeys.length ? booking.seatKeys.join(', ') : `${booking.seats}`;      //Shows the actual seat codes chosen when available
+        // Creates HTML for the confirmation popup
+        const confirmHTML = `
+            <div id="confirmWrap">
+                <div id="confirmBackdrop" style="position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:499;"></div>
+                <div style="position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:var(--surface);border:1px solid var(--amber);border-radius:12px;padding:30px;max-width:400px;width:90%;z-index:500;box-shadow:0 20px 60px rgba(0,0,0,0.8);;">
+                    <div style="text-align:center;margin-bottom:20px;">
+                        <div style="font-size:3rem;">🎫</div>
+                        <h2 style="font-family:'Bebas Neue',sans-serif;color:var(--amber);font-size:1.8rem;">Booking Confirmed!</h2>
+                    </div>
+                    <div style="background:var(--bg);border-radius:8px;padding:16px;margin-bottom:16px;">
+                        <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border);"><span style="color:var(--muted);">Booking ID</span><span style="font-family:monospace;color:var(--amber);">${booking.id}</span></div>
+                        <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border);"><span style="color:var(--muted);">Event</span><span>${booking.event}</span></div>
+                        <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border);"><span style="color:var(--muted);">Venue</span><span>${booking.venue}</span></div>
+                        <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border);"><span style="color:var(--muted);">Date</span><span>${(booking.date)}</span></div>
+                        <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border);"><span style="color:var(--muted);">Time</span><span>${booking.time.split(' - ')[0]}</span></div>
+                        <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border);"><span style="color:var(--muted);">Seat(s)</span><span>${seatLabel}</span></div>
+                        <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border);"><span style="color:var(--muted);">Name</span><span>${booking.name}</span></div>
+                        <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border);"><span style="color:var(--muted);">Payment Method</span><span>${booking.payment.toUpperCase()}</span></div>
+                        <div style="display:flex;justify-content:space-between;padding:4px 0;font-weight:700;color:var(--amber);"><span>Total</span><span>KSH ${total.toLocaleString()}</span></div>
+                    </div>
+                    <div style="display:flex;gap:10px;">
+                        <button id="confirmDownloadBtn" style="flex:1;background:var(--amber);color:var(--bg);border:none;padding:12px;border-radius:6px;font-weight:700;cursor:pointer;">📥 Download PDF</button>
+                        <button id="confirmCloseBtn" style="flex:1;background:transparent;color:var(--text);border:1px solid var(--border);padding:12px;border-radius:6px;font-weight:700;cursor:pointer;">Close</button>
+                    </div>
+                </div>
+            </div>
+        `;
+        document.body.insertAdjacentHTML('beforeend', confirmHTML);      //Adds the confirmation popup to the page
+        document.getElementById('confirmBackdrop').addEventListener('click', closeConfirmation);        //Closes the confirmation popup when the backdrop is clicked
+        document.getElementById('confirmCloseBtn').addEventListener('click', closeConfirmation);        //Closes the confirmation popup when the close button is clicked
+        document.getElementById('confirmDownloadBtn').addEventListener('click', ()=>downloadConfirmation(booking, total));
+    }
+
+    //Function to close the confirmation popup
+    function closeConfirmation(){
+        const wrap=document.getElementById('confirmWrap');
+        if(wrap)wrap.remove();
+    }
+
+    //Function to download the confirmation as a real PDF file
+    function downloadConfirmation(booking, total) {      //Generates and downloads a genuine PDF confirmation
+        try{
+            const { jsPDF } = window.jspdf;      //Grabs the jsPDF constructor from the library loaded in the head
+            const doc = new jsPDF();      //Creates a new blank PDF document
+
+            // Header banner
+            doc.setFillColor(15, 15, 15);
+            doc.rect(0, 0, 210, 38, 'F');
+            doc.setTextColor(245, 166, 35);
+            doc.setFontSize(24);
+            doc.text('TicketLive', 20, 20);
+            doc.setFontSize(12);
+            doc.text('Booking Confirmation', 20, 30);
+
+            // Details block
+            doc.setTextColor(30, 30, 30);
+            doc.setFontSize(11);
+            let y = 55;
+            const addLine = (label, value) => {      //Small helper that lays out a bold label next to its value and moves down the page
+                doc.setFont(undefined, 'bold');
+                doc.text(label, 20, y);
+                doc.setFont(undefined, 'normal');
+                doc.text(String(value), 80, y);
+                y += 10;
+            };
+            const seatLabel = booking.seatKeys && booking.seatKeys.length ? booking.seatKeys.join(', ') : String(booking.seats);      //Reuses the actual seat codes on the PDF too
+            addLine('Booking ID:', booking.id);
+            addLine('Event:', booking.event);
+            addLine('Venue:', booking.venue);
+            addLine('Date:', formatDDMMYYYY(booking.isoDate)); 
+            addLine('Time:', booking.time.split(' - ')[0]);  
+            addLine('Seat(s):', seatLabel);
+            addLine('Name:', booking.name);
+            addLine('Payment Method:', booking.payment.toUpperCase());
+            addLine('Total:', `KSH ${total.toLocaleString()}`);
+ 
+
+            doc.setFontSize(10);
+            doc.setTextColor(120, 120, 120);
+            doc.text('Thank you for booking with TicketLive!', 20, y + 10);
+            doc.text('This ticket can only be used once. Do not share it.', 20, y + 22);
+            doc.text('Tickets once sold are non-refundable.', 20, y + 28);
+
+            doc.save(`Ticket_${booking.id}.pdf`);      //Triggers the real PDF download to open
+
+            showToast('📥 PDF downloaded!', false);      //Shows a toast notification confirming the download
+        }catch(err){
+            showToast('⚠️ Could not generate PDF, please try again',true);      //Keeps the page usable and tells the user if an error occurs during PDF generation
+            console.error('PDF generation error:', err);
+        }
+    }
+    
+    // INITIALIATION SECTION
+    renderEvents(EVENTS);       // Renders the list of events on the page
+    renderQueue();      // Renders the live booking queue and priority queue visualization
+    console.log('🎫 TicketLive Loaded!');
+    console.log('📊 Data Structures: Priority Queue, BST');
+    console.log('⚡ Algorithms: Heap Sort, Binary Search');
+    console.log('💡 All fixes applied: VIP pricing (2000), priority ordering, checkout form, real PDF export');
+</script>
+</body>
+</html>
