@@ -1,0 +1,24 @@
+====================================================================
+PART 7 - BOOKING CONFIRMATION
+====================================================================
+Everything that happens after the user clicks "Confirm Booking":
+  - confirmBooking(): validates the checkout form the (name/email/phone
+    is filled in, a valid email and a valid phone number length) which
+    builds the actual booking object and adds it to the PriorityQueue,
+    the myTickets tab and triggers the confirmation popup.
+  - formatDDMMYYYY(): turns an event's isoDate ("2026-07-25") into the
+    "25/07/2026" format shown on the PDF.
+  - showConfirmation(): builds the "Booking Confirmed!" popup showing
+    all the booking details (event, venue, date, time, seat(s), name,
+    payment method, total) with Download PDF and the Close button.
+  - closeConfirmation(): closes the popup.
+  - downloadConfirmation(): uses the jsPDF library (loaded in Part 1's
+    <head>) to generate and download a real PDF ticket.
+
+This part is just the whole checkout process to ticket download.
+
+INITIALIZATION SECTION 
+
+These lines kicks off everything after the booking confirmation page loads by 
+calling renderEvents() and renderQueue() so the page isn't empty or unresponsive
+plus a console.log() lines for debugging the whole website incase of major errors.
