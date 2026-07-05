@@ -1,0 +1,15 @@
+====================================================================
+PART 3 - ALGORITHMS
+====================================================================
+This part consits of only two standalone algorithms independent from each
+other:
+  - heapSort and heapify: its a function that sorts any array given a
+    comparison function.This part will be used later to sort bookings by 
+    priority before displaying them.
+  - binarySearch(): looks up a single event by its ID very quickly by
+    repeatedly halving the search range.
+
+This part requires you to understand those two algorithms very well to be able 
+to connect with the code...only for this part.
+But generally this part together with Part 2 is what makes Part 4 exist and make sense to the user 
+as well as you.
