@@ -1,0 +1,51 @@
+<!--PART 2: DATA AND DATA STRUCTURES -->
+
+<!-- JAVASCRIPT SECTION -->
+<script>
+    
+    // Event Data Array
+    const EVENTS_DATA = [       //Detailed information for each event
+        {id:1,title:"Afrobeats Vibe Festival",category:"Music",date:"Sat 25 Jul 2026",isoDate:"2026-07-25",time:"6:00 PM - 2:00 AM",venue:"Racecourse, Ngong",price:2000,seats:50,vip:true,bg:"linear-gradient(135deg,#1a0533,#6B2D8B)"},
+        {id:2,title:"Strathmore Tech Summit",category:"Tech",date:"Fri 31 Jul 2026",isoDate:"2026-07-31",time:"9:00 AM - 4:00 PM",venue:"Strathmore University, Main Auditorium",price:1000,seats:100,vip:true,bg:"linear-gradient(135deg,#0A2540,#1E5799)"},
+        {id:3,title:"Stand-Up Nairobi Vol. 4",category:"Comedy",date:"Sat 8 Aug 2026",isoDate:"2026-08-08",time:"7:30 PM - 11:30 PM",venue:"K1 Klub House, Parklands",price:3500,seats:60,vip:true,bg:"linear-gradient(135deg,#1a1a00,#8B7D00)"},
+        {id:4,title:"KPL Finals U21 Match",category:"Sports",date:"Sun 9 Aug 2026",isoDate:"2026-08-09",time:"3:00 PM - 6:00 PM",venue:"Nyayo National Stadium",price:300,seats:0,vip:false,bg:"linear-gradient(135deg,#001a00,#1A5C00)"},
+        {id:5,title:"East Africa Business Forum",category:"Business",date:"Wed 12 Aug 2026",isoDate:"2026-08-12",time:"9:00 AM - 9:00 PM",venue:"Radisson Blu Hotel, Upperhill",price:4000,seats:30,vip:true,bg:"linear-gradient(135deg,#1a0000,#8B1A00)"},
+        {id:6,title:"Midnight Sol Jazz Night",category:"Music",date:"Fri 4 Sep 2026",isoDate:"2026-09-04",time:"8:00 PM - Midnight",venue:"Sarova Stanley Hotel, Kenyatta Avenue",price:5000,seats:15,vip:true,bg:"linear-gradient(135deg,#001520,#00526B)"}
+    ];
+
+    //  Priority Queue
+    class PriorityQueue {       //Manages priority queues based on ticket booking priority (VIP vs Standard)
+        constructor(){this.heap=[]}     //Initializes the heap array to store the queue items
+        enqueue(item){this.heap.push(item);this._bubbleUp(this.heap.length-1)}      //Adds a new item to the queue and maintains its priority order
+        dequeue(){if(!this.heap.length)return null;
+        if(this.heap.length===1)return this.heap.pop();const max=this.heap[0];this.heap[0]=this.heap.pop();this._sinkDown(0);
+        return max}     //Removes and returns the highest priority item from the queue
+        _bubbleUp(i){while(i>0){const p=Math.floor((i-1)/2);
+        if(this.heap[p].priority>=this.heap[i].priority)break;[this.heap[p],this.heap[i]]=[this.heap[i],this.heap[p]];i=p}}     //Moves the newly added item down the heap to maintain the heap property
+        _sinkDown(i){const n=this.heap.length;
+        while(true){let max=i,l=2*i+1,r=2*i+2;if(l<n&&this.heap[l].priority>this.heap[max].priority)max=l;
+        if(r<n&&this.heap[r].priority>this.heap[max].priority)max=r;
+        if(max===i)break;[this.heap[max],this.heap[i]]=[this.heap[i],this.heap[max]];i=max}}        //Moves the root item down the heap to maintain the heap property after removal
+        peek(){return this.heap[0]||null}       //Returns the highest priority item without removing it from the queue
+        size(){return this.heap.length}     //Returns the number of items in the queue
+        getAll(){return[...this.heap].sort((a,b)=>b.priority-a.priority)}       //Returns all items in the queue sorted by priority without modifying the original heap
+    }
+
+    // Binary Search Tree
+    class BSTNode{constructor(event){this.event=event;this.left=null;this.right=null}}      //Organizes and sorts event items via ticket price parameters
+    class BinarySearchTree{     //Helps to manage the event data in a tree structure for efficient searching and sorting
+        constructor(){this.root=null}       //Initializes the root node of the tree
+        insert(event){this.root=this._insert(this.root,event)}      //Inserts a new event into the tree
+        _insert(node,event){if(!node)return new BSTNode(event);
+        if(event.price<node.event.price)node.left=this._insert(node.left,event);
+        else node.right=this._insert(node.right,event);
+        return node}      //Recursively inserts the event into the correct position in the tree
+        searchByCategory(category){const results=[];
+        this._inOrder(this.root,results,category);
+        return results}       //Searches for events in a specific category and returns them in sorted order
+        _inOrder(node,results,category){if(!node)return;this._inOrder(node.left,results,category);
+        if(node.event.category===category)results.push(node.event);this._inOrder(node.right,results,category)}        //Recursively traverses through the tree in order and collects events of the specified category
+        getAllSorted(){const results=[];this._inOrderAll(this.root,results);return results}     //Returns all events in the sorted order
+        _inOrderAll(node,results){if(!node)return;this._inOrderAll(node.left,results);results.push(node.event);
+        this._inOrderAll(node.right,results)}        //Recursively traverses the tree in order and collects all events
+    }

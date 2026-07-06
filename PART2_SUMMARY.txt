@@ -1,0 +1,22 @@
+====================================================================
+PART 2 - DATA AND DATA STRUCTURES
+====================================================================
+This is where the raw data exists and where the two data structures 
+(Priority Queue and Binary Search Tree) are used by the whole
+website are defined:
+  - EVENTS_DATA: (not a data structure) this is just an array holding
+    every event (title, category, date,isoDate, time, venue, price, 
+    seats available(whether it's a VIP or a standard)).
+    In terms of the CRUD operations (Create,Read,Update and Delete) 
+    or to add/edit/remove an event it all happens here.
+  - PriorityQueue: In here whoever has the highest internal
+    "priority" number gets served first. VIP bookings and standard
+    bookings live in separate number ranges so that VIPs always outrank
+    standard users (explained fully in Part 4).
+  - BinarySearchTree (BSTNode): organizes events by price so
+    they can be searched/sorted, selected and booked efficiently by the
+    user.
+
+This is the crucial part of the whole website coz it holds the structures 
+responsible for creating, viewing, editing and deleting of data and events.
+Part 2 is connected with Part 3,4 and 5 .
