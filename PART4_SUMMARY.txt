@@ -1,0 +1,25 @@
+====================================================================
+PART 4 - DATA MANAGEMENT AND INITIALIZATION
+====================================================================
+This is where Part 2's data structures actually gets filled
+with starting data when the page loads:
+  - Creates the BST and inserts every event from EVENTS_DATA into it.
+  - Creates the live PriorityQueue with the  list of sample bookings 
+    so the Queue section isn't empty on first load(just for the demonstration) 
+  - VIP_TIER_BASE (100) and STD_TIER_BASE (50): VIP bookings use
+    priority numbers 51-100 while standard bookings use 1-50, so that a VIP can
+    never rank below a standard user.
+  - nextPriority(vip): works out what priority number a brand-new
+    booking should get. Additionally it looks at whoever is currently has the lowest
+    priority in their own tier (VIP or standard) and slots the new
+    person in just behind them. This happens any every time someone
+    completes a booking in Part 7.
+  - Global state variables: ('global state' meaning these variable are used in the 
+    whole code and calls each other for reference when needed )  example like myTickets
+    ( shows the current user's tickets), EVENTS (a copy of
+    EVENTS_DATA), currentEvent, selectedSeats, eventSeatMap (keeps
+    which seats are taken per event consistent between modal opens).
+
+This part is like a bridge between the "raw data" in Part 2 and "the website actually running" 
+which is your part. So you and the one allocated in Part 2 and Part 3 should pair up coz all of those parts are
+interconnected and will definetly help you understand your part. 
