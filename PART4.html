@@ -1,0 +1,42 @@
+    // PART 4: DATA MANAGEMENT AND INITIALIZATION
+    
+    const bst=new BinarySearchTree();       //Creates a new instance of the Binary Search Tree to manage event data
+    EVENTS_DATA.forEach(e=>bst.insert(e));      //Inserts each event from the EVENTS_DATA array into the Binary Search Tree for efficient searching and sorting
+    const bookingPQ=new PriorityQueue();        //Creates a new instance in the Priority Queue to manage booking requests based on priority
+
+    // VIP bookings live in the 51-100 priority band and standard bookings live in the 1-50 band, so a VIP is always
+    // above every standard booking no matter how many people join the queue
+    const VIP_TIER_BASE=100, STD_TIER_BASE=50; 
+    const sampleBookings=[      //Sample booking data to populate the priority queue for demonstration purposes
+        {id:'BK-0012',name:'Ken M.',event:'Midnight Sol Jazz Night',seats:2,priority:100,status:'vip',vip:true},
+        {id:'BK-0014',name:'Joan K.',event:'Stand-Up Nairobi Vol. 4',seats:3,priority:99,status:'vip',vip:true},
+        {id:'BK-0016',name:'Sharon N.',event:'East Africa Business Forum',seats:1,priority:98,status:'vip',vip:true},
+        {id:'BK-0018',name:'Dan A.',event:'Afrobeats Vibe Festival',seats:1,priority:97,status:'vip',vip:true},
+        {id:'BK-0013',name:'Alex M.',event:'Strathmore Tech Summit',seats:1,priority:96,status:'vip',vip:true},
+        {id:'BK-0023',name:'Isabell M.',event:'Midnight Sol Jazz Night',seats:2,priority:95,status:'vip',vip:true},
+        {id:'BK-0015',name:'Michael M.',event:'East Africa Business Forum',seats:2,priority:49,status:'confirmed',vip:false},
+        {id:'BK-0017',name:'Nimrod K.',event:'KPL Finals U21 Match',seats:4,priority:48,status:'confirmed',vip:false},
+        {id:'BK-0019',name:'Peter K.',event:'Strathmore Tech Summit',seats:2,priority:47,status:'confirmed',vip:false},
+        {id:'BK-0024',name:'Purity A.',event:'Midnight Sol Jazz Night',seats:1,priority:46,status:'confirmed',vip:false},
+        {id:'BK-0020',name:'Grace W.',event:'Stand-Up Nairobi Vol. 4',seats:1,priority:46,status:'confirmed',vip:false},
+        {id:'BK-0021',name:'David O.',event:'KPL Finals U21 Match',seats:3,priority:45,status:'confirmed',vip:false},
+        {id:'BK-0022',name:'Alice N.',event:'Afrobeats Vibe Festival',seats:2,priority:44,status:'confirmed',vip:false},
+    ];
+    sampleBookings.forEach(b=>bookingPQ.enqueue(b));        //Essential for enqueuing each sample booking into the priority queue to simulate a live booking environment
+
+    //Works out the priority for a brand new booking so it lands right behind the last person of the same tier
+    //(lowest current priority in that tier, minus 1) instead of everyone getting the same fixed number
+    function nextPriority(vip){
+        const all=bookingPQ.getAll();      //Reads the current queue without modifying it
+        if(vip){
+            const vipPriorities=all.filter(b=>b.vip).map(b=>b.priority);        
+            return vipPriorities.length?Math.max(STD_TIER_BASE+1,Math.min(...vipPriorities)-1):VIP_TIER_BASE;       
+        }
+        const stdPriorities=all.filter(b=>!b.vip).map(b=>b.priority);
+        return stdPriorities.length?Math.max(1,Math.min(...stdPriorities)-1):STD_TIER_BASE;
+    }
+    
+    let bookingCounter=24, myTickets=[];        //Initializes a counter for booking IDs and an array to store the user's booked tickets
+    let EVENTS=[...EVENTS_DATA], currentEvent=null, selectedSeats=new Set();        //Creates a copy of the EVENTS_DATA for manipulation, initializes the current event being booked, and a set to track selected seats
+    let currentUserDetails = null;      //Stores user details from checkout form
+    const eventSeatMap = {};        //Stores which seat keys are taken per event ID so seat allocation stays consistent every time the modal reopens
